@@ -3496,16 +3496,14 @@ def get_groups_data(api: Garmin) -> None:
 def get_group_details_data(api: Garmin) -> None:
     """Get details and members for a specific group."""
     try:
-        print("👥 Getting specific group details")
+        print("👥 Getting group details")
         group_id_input = input("Enter group ID: ").strip()
         if not group_id_input:
             print("❌ Group ID is required")
             return
 
-        # Collect all API responses for grouped display
         api_responses = []
 
-        # Get group details
         api_responses.append(
             safe_call_for_group(
                 api.get_group,
@@ -3515,7 +3513,6 @@ def get_group_details_data(api: Garmin) -> None:
             )
         )
 
-        # Get group members
         api_responses.append(
             safe_call_for_group(
                 api.get_group_members,
@@ -3525,7 +3522,6 @@ def get_group_details_data(api: Garmin) -> None:
             )
         )
 
-        # Get group announcements
         api_responses.append(
             safe_call_for_group(
                 api.get_group_announcement,
@@ -3535,7 +3531,6 @@ def get_group_details_data(api: Garmin) -> None:
             )
         )
 
-        # Display all responses as a group
         call_and_display(group_name="Group Details", api_responses=api_responses)
 
     except Exception as e:
@@ -3545,7 +3540,7 @@ def get_group_details_data(api: Garmin) -> None:
 def search_groups_data(api: Garmin) -> None:
     """Search groups by keyword."""
     try:
-        print("🔍 Search groups by keyword")
+        print("🔍 Search groups")
         print("💡 Use at least 2 characters in your search.")
         keyword = input("Keyword (e.g. 'running' or 'cycling'): ").strip()
         if not keyword:
@@ -3601,7 +3596,7 @@ def search_connections_data(api: Garmin) -> None:
 
 
 def get_connections_data(api: Garmin) -> None:
-    """Get connection-related data (including count) with centralized error handling."""
+    """Get connections and connection count."""
     try:
         print("👥 Getting your connections")
 

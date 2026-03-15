@@ -2633,7 +2633,12 @@ class Garmin:
             "start": str(start),
             "limit": str(limit),
         }
-        logger.debug("Searching groups with keyword %r (start=%s, limit=%s)", keyword, start, limit)
+        logger.debug(
+            "Searching groups with keyword %r (start=%s, limit=%s)",
+            keyword,
+            start,
+            limit,
+        )
         return self.garth.post("connectapi", url, data=payload, api=True).json()
 
     # -------------------------------------------------------------------------
@@ -2731,7 +2736,7 @@ class Garmin:
         start: int = 1,
         limit: int = 100,
     ) -> dict[str, Any]:
-        """Return steps leaderboard for connections (Garmin only supports steps).
+        """Return steps leaderboard for connections.
 
         Dates must be in 'YYYY-MM-DD' format.
         """
