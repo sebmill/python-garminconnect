@@ -190,3 +190,155 @@ def test_request_reload(garmin: garminconnect.Garmin) -> None:
     # Get steps data after reload - should still be accessible
     final_steps = sum(steps["steps"] for steps in garmin.get_steps_data(cdate))
     assert final_steps >= 0  # Steps data should be non-negative
+
+
+class DummyResponse:
+    def __init__(self, payload: dict) -> None:
+        self.payload = payload
+
+    def json(self) -> dict:
+        return self.payload
+
+
+def test_get_group_uses_membership_param(
+    garmin: garminconnect.Garmin, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured = {}
+
+    def fake_connectapi(path: str, **kwargs) -> dict:
+        captured["path"] = path
+        captured["kwargs"] = kwargs
+        return {"ok": True}
+
+    monkeypatch.setattr(garmin, "connectapi", fake_connectapi)
+
+    response = garmin.get_group(123, include_membership=False)
+
+    assert response == {"ok": True}
+    assert captured["path"] == "/group-service/group/123"
+    assert captured["kwargs"]["params"] == {"includeMembership": "false"}
+
+
+def test_get_connections_uses_expected_query_params(
+    garmin: garminconnect.Garmin, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured = {}
+
+    def fake_connectapi(path: str, **kwargs) -> dict:
+        captured["path"] = path
+        captured["kwargs"] = kwargs
+        return {"ok": True}
+
+    monkeypatch.setattr(garmin, "connectapi", fake_connectapi)
+
+    response = garmin.get_connections("example-user", start=1, limit=12)
+
+    assert response == {"ok": True}
+    assert (
+        captured["path"]
+        == "/connection-service/connection/v2/connections/pagination/example-user"
+    )
+    assert captured["kwargs"]["params"] == {
+        "start": "1",
+        "limit": "12",
+        "displayMutedStatus": "true",
+    }
+
+
+def test_get_connection_suggestions_posts_json_payload(
+    garmin: garminconnect.Garmin, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured = {}
+
+    def fake_post(namespace: str, path: str, **kwargs) -> DummyResponse:
+        captured["namespace"] = namespace
+        captured["path"] = path
+        captured["kwargs"] = kwargs
+        return DummyResponse({"results": []})
+
+    monkeypatch.setattr(garmin.garth, "post", fake_post)
+
+    response = garmin.get_connection_suggestions(cursor=None, limit=20)
+
+    assert response == {"results": []}
+    assert captured["namespace"] == "connectapi"
+    assert captured["path"] == "/usersearch-service/connection/suggestions/pagination"
+    assert captured["kwargs"] == {
+        "json": {"cursor": None, "limit": 20},
+        "api": True,
+    }
+
+
+def test_search_groups_posts_form_payload(
+    garmin: garminconnect.Garmin, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured = {}
+
+    def fake_post(namespace: str, path: str, **kwargs) -> DummyResponse:
+        captured["namespace"] = namespace
+        captured["path"] = path
+        captured["kwargs"] = kwargs
+        return DummyResponse({"groups": []})
+
+    monkeypatch.setattr(garmin.garth, "post", fake_post)
+
+    response = garmin.search_groups("running", start=1, limit=16)
+
+    assert response == {"groups": []}
+    assert captured["namespace"] == "connectapi"
+    assert captured["path"] == "/group-service/keyword"
+    assert captured["kwargs"] == {
+        "data": {"keyword": "running", "start": "1", "limit": "16"},
+        "api": True,
+    }
+
+
+def test_search_connections_posts_form_payload(
+    garmin: garminconnect.Garmin, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured = {}
+
+    def fake_post(namespace: str, path: str, **kwargs) -> DummyResponse:
+        captured["namespace"] = namespace
+        captured["path"] = path
+        captured["kwargs"] = kwargs
+        return DummyResponse({"results": []})
+
+    monkeypatch.setattr(garmin.garth, "post", fake_post)
+
+    response = garmin.search_connections("casey", start=1, limit=15)
+
+    assert response == {"results": []}
+    assert captured["namespace"] == "connectapi"
+    assert captured["path"] == "/usersearch-service/search?displayMutedStatus=true"
+    assert captured["kwargs"] == {
+        "data": {"keyword": "casey", "start": "1", "limit": "15"},
+        "api": True,
+    }
+
+
+def test_get_connection_steps_leaderboard_uses_steps_metric(
+    garmin: garminconnect.Garmin, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured = {}
+
+    def fake_connectapi(path: str, **kwargs) -> dict:
+        captured["path"] = path
+        captured["kwargs"] = kwargs
+        return {"ok": True}
+
+    monkeypatch.setattr(garmin, "connectapi", fake_connectapi)
+
+    response = garmin.get_connection_steps_leaderboard(
+        "2026-03-10", "2026-03-16", start=1, limit=100
+    )
+
+    assert response == {"ok": True}
+    assert captured["path"] == "/userstats-service/leaderboard/wellness/connection"
+    assert captured["kwargs"]["params"] == {
+        "metricId": "29",
+        "startDate": "2026-03-10",
+        "endDate": "2026-03-16",
+        "start": "1",
+        "limit": "100",
+    }
