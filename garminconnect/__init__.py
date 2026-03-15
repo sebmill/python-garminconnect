@@ -303,6 +303,24 @@ class Garmin:
 
         self.garmin_connect_training_plan_url = "/trainingplan-service/trainingplan"
 
+        self.garmin_connect_group_service_url = "/group-service"
+        self.garmin_connect_group_leaderboard_filter_url = (
+            "/userpreference-service/group.page.leaderboard.filter"
+        )
+        self.garmin_connect_group_feed_url = "/web-gateway/group/v2"
+
+        self.garmin_connect_connection_service_url = "/connection-service/connection"
+        self.garmin_connect_connection_leaderboard_filter_url = (
+            "/userpreference-service/connections.page.leaderboard.filter"
+        )
+        self.garmin_connect_connection_wellness_leaderboard_url = (
+            "/userstats-service/leaderboard/wellness/connection"
+        )
+        self.garmin_connect_connection_search_url = "/usersearch-service/search"
+        self.garmin_connect_connection_suggestions_url = (
+            "/usersearch-service/connection/suggestions/pagination"
+        )
+
         self.garmin_connect_daily_lifestyle_logging_url = (
             "/lifestylelogging-service/dailyLog"
         )
@@ -2482,6 +2500,257 @@ class Garmin:
         logger.debug("Getting userprofile settings")
 
         return self.connectapi(url)
+
+    # -------------------------------------------------------------------------
+    # Garmin Connect (social) groups
+    # -------------------------------------------------------------------------
+
+    def get_group(
+        self, group_id: int | str, include_membership: bool = True
+    ) -> dict[str, Any]:
+        """Return a single group by id.
+
+        :param group_id: Group id (numeric or string).
+        :param include_membership: Include membership info in the response.
+        """
+        url = f"{self.garmin_connect_group_service_url}/group/{group_id}"
+        params = {"includeMembership": "true" if include_membership else "false"}
+        logger.debug("Requesting group %s", group_id)
+        return self.connectapi(url, params=params)
+
+    def get_groups(
+        self, display_name: str, include_membership: bool = True
+    ) -> dict[str, Any]:
+        """Return all groups for the given user display name.
+
+        This matches:
+        `/group-service/groups/{display_name}?includeMembership=true`
+        """
+        url = f"{self.garmin_connect_group_service_url}/groups/{display_name}"
+        params = {"includeMembership": "true" if include_membership else "false"}
+        logger.debug("Requesting groups for %s", display_name)
+        return self.connectapi(url, params=params)
+
+    def get_group_members(
+        self, group_id: int | str, support_owner: bool = True
+    ) -> dict[str, Any]:
+        """Return members of a group."""
+        url = f"{self.garmin_connect_group_service_url}/group/{group_id}/members"
+        params = {"supportOwner": "true" if support_owner else "false"}
+        logger.debug("Requesting members for group %s", group_id)
+        return self.connectapi(url, params=params)
+
+    def get_group_member_connections(
+        self,
+        group_id: int | str,
+        user_profile_id: int | str,
+        support_owner: bool = True,
+    ) -> dict[str, Any]:
+        """Return connections for a specific member in a group."""
+        url = (
+            f"{self.garmin_connect_group_service_url}/group/{group_id}"
+            f"/member/{user_profile_id}/connections"
+        )
+        params = {"supportOwner": "true" if support_owner else "false"}
+        logger.debug(
+            "Requesting member connections for group %s, user %s",
+            group_id,
+            user_profile_id,
+        )
+        return self.connectapi(url, params=params)
+
+    def get_group_announcement(self, group_id: int | str) -> dict[str, Any]:
+        """Return announcements for a group."""
+        url = f"{self.garmin_connect_group_service_url}/group/{group_id}/announcement"
+        logger.debug("Requesting announcements for group %s", group_id)
+        return self.connectapi(url)
+
+    def get_group_activity_types(self) -> dict[str, Any]:
+        """Return activity types used in the group context."""
+        url = f"{self.garmin_connect_group_service_url}/activityTypes"
+        logger.debug("Requesting group activity types")
+        return self.connectapi(url)
+
+    def get_group_leaderboard_filter(self) -> dict[str, Any]:
+        """Return the user's leaderboard filter preference for group pages."""
+        url = self.garmin_connect_group_leaderboard_filter_url
+        logger.debug("Requesting group leaderboard filter")
+        return self.connectapi(url)
+
+    def get_group_request_not_handled(self, display_name: str) -> dict[str, Any]:
+        """Return unhandled group requests for a user (by display name)."""
+        url = f"{self.garmin_connect_group_service_url}/requestNotHandled/{display_name}"
+        logger.debug("Requesting request-not-handled for %s", display_name)
+        return self.connectapi(url)
+
+    def get_group_feed(
+        self,
+        group_id: int | str,
+        image_versions: str | None = None,
+    ) -> dict[str, Any]:
+        """Return the group feed (activity feed for the group).
+
+        :param group_id: Group id.
+        :param image_versions: Optional query string for image versions, e.g.
+            "image-version=PROFILE&image-version=FRAMED_PROFILE". If None, a
+            default set is used.
+        """
+        url = f"{self.garmin_connect_group_feed_url}/{group_id}/groupFeed"
+        if image_versions is None:
+            params = [
+                ("image-version", v)
+                for v in (
+                    "PROFILE",
+                    "FRAMED_PROFILE",
+                    "PREMIUM_PROFILE",
+                    "PROFILE_FRIEND",
+                    "FRAMED_FRIEND",
+                    "PREMIUM_FRIEND",
+                    "PROFILE_THUMBNAIL",
+                    "FRAMED_THUMBNAIL",
+                    "PREMIUM_THUMBNAIL",
+                )
+            ]
+        else:
+            params = []
+            for part in image_versions.split("&"):
+                if "=" in part:
+                    k, v = part.strip().split("=", 1)
+                    params.append((k, v))
+        logger.debug("Requesting group feed for group %s", group_id)
+        return self.connectapi(url, params=params)
+
+    def search_groups(
+        self, keyword: str, start: int = 1, limit: int = 16
+    ) -> dict[str, Any]:
+        """Search groups by keyword.
+
+        Uses POST with form body to /group-service/keyword.
+        """
+        url = f"{self.garmin_connect_group_service_url}/keyword"
+        payload = {
+            "keyword": keyword,
+            "start": str(start),
+            "limit": str(limit),
+        }
+        logger.debug("Searching groups with keyword %r (start=%s, limit=%s)", keyword, start, limit)
+        return self.garth.post("connectapi", url, data=payload, api=True).json()
+
+    # -------------------------------------------------------------------------
+    # Garmin Connect (social) connections
+    # -------------------------------------------------------------------------
+
+    def get_connection_count(self) -> dict[str, Any]:
+        """Return the total number of connections for the current user."""
+        url = f"{self.garmin_connect_connection_service_url}/connections/count"
+        logger.debug("Requesting connection count")
+        return self.connectapi(url)
+
+    def get_pending_connections(
+        self, mutual_connection_count_included: bool = True
+    ) -> dict[str, Any]:
+        """Return pending connection requests for the current user."""
+        url = f"{self.garmin_connect_connection_service_url}/pending"
+        params = {
+            "mutualConnectionCountIncluded": (
+                "true" if mutual_connection_count_included else "false"
+            )
+        }
+        logger.debug("Requesting pending connections")
+        return self.connectapi(url, params=params)
+
+    def get_connections(
+        self,
+        display_name: str,
+        start: int = 1,
+        limit: int = 100,
+        display_muted_status: bool = True,
+    ) -> dict[str, Any]:
+        """Return a paginated list of connections for the given display name."""
+        url = (
+            f"{self.garmin_connect_connection_service_url}/v2/connections/pagination/"
+            f"{display_name}"
+        )
+        params = {
+            "start": str(start),
+            "limit": str(limit),
+            "displayMutedStatus": "true" if display_muted_status else "false",
+        }
+        logger.debug(
+            "Requesting connections for %s (start=%s, limit=%s)",
+            display_name,
+            start,
+            limit,
+        )
+        return self.connectapi(url, params=params)
+
+    def get_connection_suggestions(
+        self, cursor: str | None = None, limit: int = 20
+    ) -> dict[str, Any]:
+        """Return suggested connections (people you may know)."""
+        url = self.garmin_connect_connection_suggestions_url
+        payload = {"cursor": cursor, "limit": limit}
+        logger.debug("Requesting connection suggestions (limit=%s)", limit)
+        return self.garth.post("connectapi", url, json=payload, api=True).json()
+
+    def search_connections(
+        self,
+        keyword: str,
+        start: int = 1,
+        limit: int = 15,
+        display_muted_status: bool = True,
+    ) -> dict[str, Any]:
+        """Search connections by name."""
+        url = (
+            f"{self.garmin_connect_connection_search_url}"
+            f"?displayMutedStatus={'true' if display_muted_status else 'false'}"
+        )
+        payload = {
+            "keyword": keyword,
+            "start": str(start),
+            "limit": str(limit),
+        }
+        logger.debug(
+            "Searching connections with keyword %r (start=%s, limit=%s)",
+            keyword,
+            start,
+            limit,
+        )
+        return self.garth.post("connectapi", url, data=payload, api=True).json()
+
+    def get_connection_leaderboard_filter(self) -> dict[str, Any]:
+        """Return the user's leaderboard filter preference for connections page."""
+        url = self.garmin_connect_connection_leaderboard_filter_url
+        logger.debug("Requesting connections leaderboard filter")
+        return self.connectapi(url)
+
+    def get_connection_steps_leaderboard(
+        self,
+        startdate: str,
+        enddate: str,
+        start: int = 1,
+        limit: int = 100,
+    ) -> dict[str, Any]:
+        """Return steps leaderboard for connections (Garmin only supports steps).
+
+        Dates must be in 'YYYY-MM-DD' format.
+        """
+        startdate = _validate_date_format(startdate, "startdate")
+        enddate = _validate_date_format(enddate, "enddate")
+        url = self.garmin_connect_connection_wellness_leaderboard_url
+        params = {
+            "metricId": "29",  # WELLNESS_TOTAL_STEPS; Connect only supports steps leaderboard
+            "startDate": startdate,
+            "endDate": enddate,
+            "start": str(start),
+            "limit": str(limit),
+        }
+        logger.debug(
+            "Requesting connection steps leaderboard (%s to %s)",
+            startdate,
+            enddate,
+        )
+        return self.connectapi(url, params=params)
 
     def request_reload(self, cdate: str) -> dict[str, Any]:
         """Request reload of data for a specific date. This is necessary because

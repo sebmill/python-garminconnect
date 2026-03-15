@@ -390,7 +390,7 @@ menu_categories = {
         },
     },
     "7": {
-        "name": "🏆 Goals & Achievements",
+        "name": "🏆 Goals & Challenges",
         "options": {
             "1": {"desc": "Get personal records", "key": "get_personal_records"},
             "2": {"desc": "Get earned badges", "key": "get_earned_badges"},
@@ -425,6 +425,22 @@ menu_categories = {
         },
     },
     "8": {
+        "name": "👥 Connections & Groups",
+        "options": {
+            "1": {"desc": "Get your connections", "key": "get_connections"},
+            "2": {"desc": "Search connections", "key": "search_connections"},
+            "3": {"desc": "Get pending connection requests", "key": "get_pending_connections"},
+            "4": {"desc": "Get suggested connections", "key": "get_connection_suggestions"},
+            "5": {
+                "desc": "Get steps leaderboard for connections (current or previous week)",
+                "key": "get_connection_steps_leaderboard",
+            },
+            "6": {"desc": "Get your groups", "key": "get_groups"},
+            "7": {"desc": "Search groups", "key": "search_groups"},
+            "8": {"desc": "Get group by ID", "key": "get_group"},
+        },
+    },
+    "9": {
         "name": "⌚ Device & Technical",
         "options": {
             "1": {"desc": "Get all device information", "key": "get_devices"},
@@ -442,7 +458,7 @@ menu_categories = {
             },
         },
     },
-    "9": {
+    "0": {
         "name": "🎽 Gear & Equipment",
         "options": {
             "1": {"desc": "Get user gear list", "key": "get_gear"},
@@ -460,7 +476,7 @@ menu_categories = {
             },
         },
     },
-    "0": {
+    "a": {
         "name": "💧 Hydration & Wellness",
         "options": {
             "1": {
@@ -507,7 +523,7 @@ menu_categories = {
             },
         },
     },
-    "a": {
+    "b": {
         "name": "🔧 System & Export",
         "options": {
             "1": {"desc": "Create sample health report", "key": "create_health_report"},
@@ -519,7 +535,7 @@ menu_categories = {
             "4": {"desc": "Execute GraphQL query", "key": "query_garmin_graphql"},
         },
     },
-    "b": {
+    "c": {
         "name": "📅 Training Plans",
         "options": {
             "1": {"desc": "Get training plans", "key": "get_training_plans"},
@@ -1309,6 +1325,17 @@ def format_timedelta(td):
     minutes, seconds = divmod(td.seconds + td.days * 86400, 60)
     hours, minutes = divmod(minutes, 60)
     return f"{hours:d}:{minutes:02d}:{seconds:02d}"
+
+
+def get_calendar_week_range(
+    reference_date: datetime.date, previous_week: bool = False
+) -> tuple[str, str]:
+    """Return Monday-Sunday week boundaries for the given reference date."""
+    start_date = reference_date - timedelta(days=reference_date.weekday())
+    if previous_week:
+        start_date -= timedelta(days=7)
+    end_date = start_date + timedelta(days=6)
+    return start_date.isoformat(), end_date.isoformat()
 
 
 def safe_call_for_group(
@@ -3445,6 +3472,212 @@ def get_virtual_challenges_data(api: Garmin) -> None:
     print("   - Adhoc challenges (menu option 7-3)")
 
 
+def get_groups_data(api: Garmin) -> None:
+    """Get the current user's groups."""
+    try:
+        print("👥 Getting your groups")
+
+        display_name = api.display_name
+        if not display_name:
+            print("❌ Could not determine your display name (ensure you are logged in)")
+            return
+
+        call_and_display(
+            api.get_groups,
+            display_name,
+            method_name="get_groups",
+            api_call_desc=f"api.get_groups('{display_name}')",
+        )
+
+    except Exception as e:
+        print(f"⚠️ Error retrieving group data: {e}")
+
+
+def get_group_details_data(api: Garmin) -> None:
+    """Get details and members for a specific group."""
+    try:
+        print("👥 Getting specific group details")
+        group_id_input = input("Enter group ID: ").strip()
+        if not group_id_input:
+            print("❌ Group ID is required")
+            return
+
+        # Collect all API responses for grouped display
+        api_responses = []
+
+        # Get group details
+        api_responses.append(
+            safe_call_for_group(
+                api.get_group,
+                group_id_input,
+                method_name="get_group",
+                api_call_desc=f"api.get_group('{group_id_input}')",
+            )
+        )
+
+        # Get group members
+        api_responses.append(
+            safe_call_for_group(
+                api.get_group_members,
+                group_id_input,
+                method_name="get_group_members",
+                api_call_desc=f"api.get_group_members('{group_id_input}')",
+            )
+        )
+
+        # Get group announcements
+        api_responses.append(
+            safe_call_for_group(
+                api.get_group_announcement,
+                group_id_input,
+                method_name="get_group_announcement",
+                api_call_desc=f"api.get_group_announcement('{group_id_input}')",
+            )
+        )
+
+        # Display all responses as a group
+        call_and_display(group_name="Group Details", api_responses=api_responses)
+
+    except Exception as e:
+        print(f"⚠️ Error retrieving group details: {e}")
+
+
+def search_groups_data(api: Garmin) -> None:
+    """Search groups by keyword."""
+    try:
+        print("🔍 Search groups by keyword")
+        print("💡 Use at least 2 characters in your search.")
+        keyword = input("Keyword (e.g. 'running' or 'cycling'): ").strip()
+        if not keyword:
+            print("❌ Keyword is required")
+            return
+        if len(keyword) < 2:
+            print("❌ Use at least 2 characters in your search.")
+            return
+
+        start = 1
+        limit = 16
+
+        call_and_display(
+            api.search_groups,
+            keyword,
+            start,
+            limit,
+            method_name="search_groups",
+            api_call_desc=f"api.search_groups('{keyword}', {start}, {limit})",
+        )
+
+    except Exception as e:
+        print(f"⚠️ Error searching groups: {e}")
+
+
+def search_connections_data(api: Garmin) -> None:
+    """Search connections by keyword."""
+    try:
+        print("🔍 Search connections")
+        print("💡 Use at least 2 characters in your search.")
+        keyword = input("Keyword (e.g. 'alex' or 'sam'): ").strip()
+        if not keyword:
+            print("❌ Keyword is required")
+            return
+        if len(keyword) < 2:
+            print("❌ Use at least 2 characters in your search.")
+            return
+
+        start = 1
+        limit = 15
+
+        call_and_display(
+            api.search_connections,
+            keyword,
+            start,
+            limit,
+            method_name="search_connections",
+            api_call_desc=f"api.search_connections('{keyword}', {start}, {limit})",
+        )
+
+    except Exception as e:
+        print(f"⚠️ Error searching connections: {e}")
+
+
+def get_connections_data(api: Garmin) -> None:
+    """Get connection-related data (including count) with centralized error handling."""
+    try:
+        print("👥 Getting your connections")
+
+        display_name = api.display_name
+        if not display_name:
+            print("❌ Could not determine your display name (ensure you are logged in)")
+            return
+
+        start = 1
+        limit = config.default_limit
+
+        api_responses = []
+
+        api_responses.append(
+            safe_call_for_group(
+                api.get_connection_count,
+                method_name="get_connection_count",
+                api_call_desc="api.get_connection_count()",
+            )
+        )
+
+        api_responses.append(
+            safe_call_for_group(
+                api.get_connections,
+                display_name,
+                start,
+                limit,
+                method_name="get_connections",
+                api_call_desc=f"api.get_connections('{display_name}', {start}, {limit})",
+            )
+        )
+
+        call_and_display(group_name="Connections", api_responses=api_responses)
+
+    except Exception as e:
+        print(f"⚠️ Error retrieving connections: {e}")
+
+
+def get_connection_steps_leaderboard_data(api: Garmin) -> None:
+    """Get steps leaderboard for connections (current or previous week)."""
+    try:
+        print("📊 Getting steps leaderboard for connections")
+        choice = (
+            input("Current week or previous week? [current]: ").strip().lower()
+            or "current"
+        )
+        if choice in ("current", "c"):
+            startdate, enddate = get_calendar_week_range(config.today)
+        elif choice in ("previous", "prev", "p"):
+            startdate, enddate = get_calendar_week_range(
+                config.today, previous_week=True
+            )
+        else:
+            print("❌ Please enter 'current' or 'previous'")
+            return
+
+        start = 1
+        limit = config.default_limit
+
+        call_and_display(
+            api.get_connection_steps_leaderboard,
+            startdate,
+            enddate,
+            start,
+            limit,
+            method_name="get_connection_steps_leaderboard",
+            api_call_desc=(
+                "api.get_connection_steps_leaderboard("
+                f"'{startdate}', '{enddate}', {start}, {limit})"
+            ),
+        )
+
+    except Exception as e:
+        print(f"⚠️ Error retrieving steps leaderboard for connections: {e}")
+
+
 def add_hydration_data_entry(api: Garmin) -> None:
     """Add hydration data entry."""
     try:
@@ -3976,6 +4209,24 @@ def execute_api_call(api: Garmin, key: str) -> None:
                 method_name="get_in_progress_badges",
                 api_call_desc="api.get_in_progress_badges()",
             ),
+            "get_connections": lambda: get_connections_data(api),
+            "search_connections": lambda: search_connections_data(api),
+            "get_pending_connections": lambda: call_and_display(
+                api.get_pending_connections,
+                method_name="get_pending_connections",
+                api_call_desc="api.get_pending_connections()",
+            ),
+            "get_connection_suggestions": lambda: call_and_display(
+                api.get_connection_suggestions,
+                method_name="get_connection_suggestions",
+                api_call_desc="api.get_connection_suggestions()",
+            ),
+            "get_connection_steps_leaderboard": lambda: get_connection_steps_leaderboard_data(
+                api
+            ),
+            "get_groups": lambda: get_groups_data(api),
+            "search_groups": lambda: search_groups_data(api),
+            "get_group": lambda: get_group_details_data(api),
             # Device & Technical
             "get_devices": lambda: call_and_display(
                 api.get_devices,
