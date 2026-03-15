@@ -13,6 +13,8 @@ The Garmin Connect API library comes with two examples:
 - **`example.py`** - Simple getting-started example showing authentication, token storage, and basic API calls
 - **`demo.py`** - Comprehensive demo providing access to **127+ API methods** organized into **13 categories** for easy navigation
 
+Note: The demo menu is generated dynamically; exact options may change between releases.
+
 ```bash
 $ ./demo.py
 🏃‍♂️ Full-blown Garmin Connect API Demo - Main Menu
@@ -25,13 +27,13 @@ Select a category:
   [4] 📈 Historical Data & Trends
   [5] 🏃 Activities & Workouts
   [6] ⚖️ Body Composition & Weight
-  [7] 🏆 Goals & Achievements
-  [8] ⌚ Device & Technical
-  [9] 🎽 Gear & Equipment
-  [0] 💧 Hydration & Wellness
-  [a] 🔧 System & Export
-  [b] 📅 Training plans
-  [c] ⛳ Golf
+  [7] 🏆 Goals & Challenges
+  [8] 👥 Connections & Groups
+  [9] ⌚ Device & Technical
+  [0] 🎽 Gear & Equipment
+  [a] 💧 Hydration & Wellness
+  [b] 🔧 System & Export
+  [c] 📅 Training plans
 
   [q] Exit program
 
@@ -48,7 +50,8 @@ Make your selection:
 - **Historical Data & Trends**: 9 methods (date range queries, weekly aggregates)
 - **Activities & Workouts**: 35 methods (comprehensive activity, workout management, typed workout uploads, scheduling, import)
 - **Body Composition & Weight**: 8 methods (weight tracking, body composition)
-- **Goals & Achievements**: 15 methods (challenges, badges, goals)
+- **Goals & Challenges**: 15 methods (challenges, badges, goals)
+- **Connections & Groups**: 8 methods (connections, suggestions, search, leaderboards, groups)
 - **Device & Technical**: 7 methods (device info, settings)
 - **Gear & Equipment**: 7 methods (gear management, tracking)
 - **Hydration & Wellness**: 12 methods (hydration, nutrition, blood pressure, menstrual)
@@ -78,7 +81,8 @@ This library enables developers to programmatically access Garmin Connect data i
 - **Nutrition**: Daily food logs, meals, and nutrition settings
 - **Golf**: Scorecard summaries, scorecard details, shot-by-shot data
 - **Device Information**: Connected devices, settings, alarms, solar data
-- **Goals & Achievements**: Personal records, badges, challenges, race predictions
+- **Goals & Challenges**: Personal records, badges, challenges, race predictions
+- **Social Features**: Connections, suggested connections, groups, searches, and steps leaderboards
 - **Historical Data**: Trends, progress tracking, date range queries
 
 Compatible with all Garmin Connect accounts. See <https://connect.garmin.com/>
