@@ -245,6 +245,32 @@ def test_get_connections_uses_expected_query_params(
     }
 
 
+def test_get_connection_activities_uses_graphql_query(
+    garmin: garminconnect.Garmin, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured = {}
+
+    def fake_query_garmin_graphql(query: dict) -> dict:
+        captured["query"] = query
+        return {"data": {"activitiesScalar": {"activityList": []}}}
+
+    monkeypatch.setattr(garmin, "query_garmin_graphql", fake_query_garmin_graphql)
+
+    response = garmin.get_connection_activities(
+        "example-user", startdate="2026-03-10", enddate="2026-03-16", limit=25
+    )
+
+    assert response == {"activityList": []}
+    assert captured["query"] == {
+        "query": (
+            'query{activitiesScalar(displayName:"example-user", '
+            'startTimestampLocal:"2026-03-10T00:00:00.00", '
+            'endTimestampLocal:"2026-03-16T23:59:59.999", '
+            "limit:25)}"
+        )
+    }
+
+
 def test_get_connection_suggestions_posts_json_payload(
     garmin: garminconnect.Garmin, monkeypatch: pytest.MonkeyPatch
 ) -> None:

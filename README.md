@@ -51,7 +51,7 @@ Make your selection:
 - **Activities & Workouts**: 35 methods (comprehensive activity, workout management, typed workout uploads, scheduling, import)
 - **Body Composition & Weight**: 8 methods (weight tracking, body composition)
 - **Goals & Challenges**: 15 methods (challenges, badges, goals)
-- **Connections & Groups**: 8 methods (connections, suggestions, search, leaderboards, groups)
+- **Connections & Groups**: 9 methods (connections, connection activities, suggestions, search, leaderboards, groups)
 - **Device & Technical**: 7 methods (device info, settings)
 - **Gear & Equipment**: 7 methods (gear management, tracking)
 - **Hydration & Wellness**: 12 methods (hydration, nutrition, blood pressure, menstrual)
@@ -82,7 +82,7 @@ This library enables developers to programmatically access Garmin Connect data i
 - **Golf**: Scorecard summaries, scorecard details, shot-by-shot data
 - **Device Information**: Connected devices, settings, alarms, solar data
 - **Goals & Challenges**: Personal records, badges, challenges, race predictions
-- **Social Features**: Connections, suggested connections, groups, searches, and steps leaderboards
+- **Social Features**: Connections, visible connection activities, suggested connections, groups, searches, and steps leaderboards
 - **Historical Data**: Trends, progress tracking, date range queries
 
 Compatible with all Garmin Connect accounts. See <https://connect.garmin.com/>

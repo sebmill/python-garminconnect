@@ -429,15 +429,16 @@ menu_categories = {
         "options": {
             "1": {"desc": "Get your connections", "key": "get_connections"},
             "2": {"desc": "Search connections", "key": "search_connections"},
-            "3": {"desc": "Get pending connection requests", "key": "get_pending_connections"},
-            "4": {"desc": "Get suggested connections", "key": "get_connection_suggestions"},
-            "5": {
+            "3": {"desc": "Get connection activities", "key": "get_connection_activities"},
+            "4": {"desc": "Get pending connection requests", "key": "get_pending_connections"},
+            "5": {"desc": "Get suggested connections", "key": "get_connection_suggestions"},
+            "6": {
                 "desc": "Get steps leaderboard for connections (current or previous week)",
                 "key": "get_connection_steps_leaderboard",
             },
-            "6": {"desc": "Get your groups", "key": "get_groups"},
-            "7": {"desc": "Search groups", "key": "search_groups"},
-            "8": {"desc": "Get group by ID", "key": "get_group"},
+            "7": {"desc": "Get your groups", "key": "get_groups"},
+            "8": {"desc": "Search groups", "key": "search_groups"},
+            "9": {"desc": "Get group by ID", "key": "get_group"},
         },
     },
     "9": {
@@ -3595,6 +3596,41 @@ def search_connections_data(api: Garmin) -> None:
         print(f"⚠️ Error searching connections: {e}")
 
 
+def get_connection_activities_data(api: Garmin) -> None:
+    """Get visible activities for a connection by display name."""
+    try:
+        print("🏃 Get connection activities")
+        display_name = input("Display name: ").strip()
+        if not display_name:
+            print("❌ Display name is required")
+            return
+
+        default_startdate = config.month_start.isoformat()
+        default_enddate = config.today.isoformat()
+        startdate = (
+            input(f"Start date [{default_startdate}]: ").strip() or default_startdate
+        )
+        enddate = input(f"End date [{default_enddate}]: ").strip() or default_enddate
+        limit_input = input(f"Limit [{config.default_limit}]: ").strip()
+        limit = int(limit_input) if limit_input else config.default_limit
+
+        call_and_display(
+            api.get_connection_activities,
+            display_name,
+            startdate,
+            enddate,
+            limit,
+            method_name="get_connection_activities",
+            api_call_desc=(
+                "api.get_connection_activities("
+                f"'{display_name}', '{startdate}', '{enddate}', {limit})"
+            ),
+        )
+
+    except Exception as e:
+        print(f"⚠️ Error retrieving connection activities: {e}")
+
+
 def get_connections_data(api: Garmin) -> None:
     """Get connections and connection count."""
     try:
@@ -4206,6 +4242,7 @@ def execute_api_call(api: Garmin, key: str) -> None:
             ),
             "get_connections": lambda: get_connections_data(api),
             "search_connections": lambda: search_connections_data(api),
+            "get_connection_activities": lambda: get_connection_activities_data(api),
             "get_pending_connections": lambda: call_and_display(
                 api.get_pending_connections,
                 method_name="get_pending_connections",

@@ -2645,6 +2645,74 @@ class Garmin:
     # Garmin Connect (social) connections
     # -------------------------------------------------------------------------
 
+    def get_connection_activities(
+        self,
+        display_name: str,
+        startdate: str | None = None,
+        enddate: str | None = None,
+        limit: int = 20,
+    ) -> dict[str, Any]:
+        """Return visible activities for a connection by display name."""
+        if not isinstance(display_name, str):
+            raise ValueError("display_name must be a string")
+
+        display_name = display_name.strip()
+        if not display_name:
+            raise ValueError("display_name cannot be empty")
+
+        limit = _validate_positive_integer(limit, "limit")
+        if limit > MAX_ACTIVITY_LIMIT:
+            raise ValueError(f"limit cannot exceed {MAX_ACTIVITY_LIMIT}")
+
+        if enddate is None:
+            end_date = date.today()
+            enddate = end_date.isoformat()
+        else:
+            enddate = _validate_date_format(enddate, "enddate")
+            end_date = datetime.strptime(enddate, DATE_FORMAT_STR).date()
+
+        if startdate is None:
+            startdate = (end_date - timedelta(days=30)).isoformat()
+        else:
+            startdate = _validate_date_format(startdate, "startdate")
+
+        if datetime.strptime(startdate, DATE_FORMAT_STR).date() > end_date:
+            raise ValueError("startdate must be on or before enddate")
+
+        safe_display_name = display_name.replace("\\", "\\\\").replace('"', '\\"')
+        start_timestamp_local = f"{startdate}T00:00:00.00"
+        end_timestamp_local = f"{enddate}T23:59:59.999"
+        graphql_payload = {
+            "query": (
+                "query{activitiesScalar("
+                f'displayName:"{safe_display_name}", '
+                f'startTimestampLocal:"{start_timestamp_local}", '
+                f'endTimestampLocal:"{end_timestamp_local}", '
+                f"limit:{limit}"
+                ")}"
+            )
+        }
+        logger.debug(
+            "Requesting visible activities for %s from %s to %s with limit %d",
+            display_name,
+            startdate,
+            enddate,
+            limit,
+        )
+        response = self.query_garmin_graphql(graphql_payload)
+
+        if isinstance(response, dict):
+            data = response.get("data")
+            if isinstance(data, dict):
+                activities = data.get("activitiesScalar")
+                if isinstance(activities, dict):
+                    return activities
+            if "errors" in response:
+                return response
+
+        logger.warning("No connection activities data received for %s", display_name)
+        return {"activityList": []}
+
     def get_connection_count(self) -> dict[str, Any]:
         """Return the total number of connections for the current user."""
         url = f"{self.garmin_connect_connection_service_url}/connections/count"
