@@ -34,6 +34,7 @@ Select a category:
   [a] 💧 Hydration & Wellness
   [b] 🔧 System & Export
   [c] 📅 Training plans
+  [d] ⛳ Golf
 
   [q] Exit program
 

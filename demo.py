@@ -543,7 +543,7 @@ menu_categories = {
             "2": {"desc": "Get training plan by ID", "key": "get_training_plan_by_id"},
         },
     },
-    "c": {
+    "d": {
         "name": "⛳ Golf",
         "options": {
             "1": {"desc": "Get golf scorecard summary", "key": "get_golf_summary"},
